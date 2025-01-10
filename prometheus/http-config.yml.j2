@@ -1,0 +1,10 @@
+
+tls_server_config:
+  cert_file: "{{ http_cert_file }}"
+  key_file: "{{ http_key_file }}"
+
+http_server_config:
+  http2: true
+
+basic_auth_users:
+  grafana: "{{ grafana_auth_token }}"

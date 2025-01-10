@@ -1,0 +1,188 @@
+services:
+  prometheus-dc-idf:
+    image: prom/prometheus:v2.53.2
+    container_name: prometheus-dc-idf
+    user: "1000:1000"
+    restart: always
+    environment:
+      - TZ=Europe/Paris
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /opt/dc-idf/data-prometheus:/data
+      - /opt/dc-idf/dc-idf.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/data/dc-idf"
+      - "--web.enable-lifecycle"
+      - "--storage.tsdb.min-block-duration=2h"
+      - "--storage.tsdb.max-block-duration=2h"
+      - "--storage.tsdb.retention.time=15d"
+      - "--web.listen-address=0.0.0.0:9090"
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+
+  sidecar-dc-idf:
+    image: thanosio/thanos:v0.36.1
+    container_name: sidecar-dc-idf
+    user: "1000:1000"
+    restart: always
+    environment:
+      - TZ=Europe/Paris
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /opt/dc-idf/data-prometheus:/data
+      - /opt/dc-idf/bucket-dc-idf.yml:/etc/bucket.yml:ro
+    command:
+      - "sidecar"
+      - "--grpc-address=0.0.0.0:10901"
+      - "--grpc-grace-period=5s"
+      - "--http-address=0.0.0.0:10902"
+      - "--http-grace-period=1s"
+      - "--prometheus.url=http://prometheus-dc-idf:9090"
+      - "--tsdb.path=/data/dc-idf"
+      - "--objstore.config-file=/etc/bucket.yml"
+    depends_on:
+      - prometheus-dc-idf
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  store-dc-idf:
+    image: thanosio/thanos:v0.36.1
+    container_name: store-dc-idf
+    user: "1000:1000"
+    restart: always
+    environment:
+      - TZ=Europe/Paris
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /opt/dc-idf/data-thanos:/data
+      - /opt/dc-idf/bucket-dc-idf.yml:/etc/bucket.yml:ro
+    command:
+      - "store"
+      - "--grpc-address=0.0.0.0:10905"
+      - "--grpc-grace-period=5s"
+      - "--http-address=0.0.0.0:10906"
+      - "--http-grace-period=1s"
+      - "--data-dir=/data/dc-idf"
+      - "--objstore.config-file=/etc/bucket.yml"
+      - "--consistency-delay=30m"
+      - "--max-time=-15d"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  compactor-dc-idf:
+    image: thanosio/thanos:v0.36.1
+    container_name: compactor-dc-idf
+    user: "1000:1000"
+    restart: always
+    environment:
+      - TZ=Europe/Paris
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /opt/dc-idf/data-thanos:/data
+      - /opt/dc-idf/bucket-dc-idf.yml:/etc/bucket.yml:ro
+    command:
+      - "compact"
+      - "--data-dir=/data/compact-dc-idf"
+      - "--objstore.config-file=/etc/bucket.yml"
+      - "--http-address=0.0.0.0:10902"
+      - "--http-grace-period=2m"
+      - "--consistency-delay=30m"
+      - "--retention.resolution-raw=90d"
+      - "--retention.resolution-5m=1y"
+      - "--retention.resolution-1h=1y"
+    depends_on:
+      - sidecar-dc-idf
+      - store-dc-idf
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  query-dc-idf:
+    image: thanosio/thanos:v0.36.1
+    container_name: query-dc-idf
+    user: "1000:1000"
+    restart: always
+    environment:
+      - TZ=Europe/Paris
+    command:
+      - "query"
+      - "--grpc-address=0.0.0.0:10907"
+      - "--grpc-grace-period=5s"
+      - "--http-address=0.0.0.0:10910"
+      - "--http-grace-period=1s"
+      - "--query.timeout=2m"
+      - "--store.response-timeout=10s"
+      - "--endpoint=sidecar-dc-idf:10901"
+      - "--endpoint=store-dc-idf:10905"
+    depends_on:
+      - sidecar-dc-idf
+      - store-dc-idf
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  query-frontend-dc-idf:
+    image: thanosio/thanos:v0.36.1
+    container_name: query-frontend-dc-idf
+    restart: always
+    environment:
+      - TZ=Europe/Paris
+    command:
+      - "query-frontend"
+      - "--http-address=0.0.0.0:10904"
+      - "--query-frontend.downstream-url=http://query-dc-idf:10910"
+      - "--query-range.response-cache-config-file=/etc/memcached.yml"
+      - "--http.config=/etc/http-config.yml"
+    ports:
+      - 10904:10904
+    depends_on:
+      - query-dc-idf
+      - memcached-dc-idf
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /opt/dc-idf/http-config.yml:/etc/http-config.yml:ro
+      - /opt/dc-idf/memcached.yml:/etc/memcached.yml:ro
+      - /etc/ssl/certs_inrae/vmi-prod-705.dcidf.inrae.fr.pem:/etc/vmi-prod-705.dcidf.inrae.fr.pem:ro
+      - /etc/ssl/certs_inrae/vmi-prod-705.dcidf.inrae.fr.key.pass:/etc/vmi-prod-705.dcidf.inrae.fr.key.pass:ro
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  memcached-dc-idf:
+    image: memcached:latest
+    container_name: memcached-dc-idf
+    restart: always
+    environment:
+      - TZ=Europe/Paris
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
