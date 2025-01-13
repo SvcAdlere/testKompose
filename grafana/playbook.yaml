@@ -1,0 +1,11 @@
+---
+- name: Install requirements
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  become: true
+  tasks:
+    - name: ldap.toml
+      ansible.builtin.template:
+        src: ldap.toml.j2
+        dest: /opt/grafana/ldap.toml

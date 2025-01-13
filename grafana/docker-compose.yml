@@ -49,6 +49,8 @@ services:
     restart: always
     container_name: postgres
     image: bitnami/postgresql:15
+    ports:
+      - "5432:5432"
     environment:
       - TZ=Europe/Paris
       - POSTGRESQL_LOG_HOSTNAME=true

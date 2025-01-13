@@ -1,0 +1,130 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.yml
+    kompose.version: 1.35.0 (9532ceef3)
+  labels:
+    io.kompose.service: grafana
+  name: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: grafana
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yml
+        kompose.version: 1.35.0 (9532ceef3)
+      labels:
+        io.kompose.service: grafana
+    spec:
+      containers:
+        - env:
+            - name: GF_ALERTING_ENABLED
+              value: "false"
+            - name: GF_ANALYTICS_CHECK_FOR_UPDATES
+              value: "false"
+            - name: GF_ANALYTICS_REPORTING_ENABLED
+              value: "false"
+            - name: GF_AUTH_ANONYMOUS_ENABLED
+              value: "true"
+            - name: GF_AUTH_ANONYMOUS_HIDE_VERSION
+              value: "true"
+            - name: GF_AUTH_ANONYMOUS_ORG_NAME
+              value: EXPLOIT
+            - name: GF_AUTH_ANONYMOUS_ORG_ROLE
+              value: Viewer
+            - name: GF_AUTH_LDAP_ALLOW_SIGN_UP
+              value: "true"
+            - name: GF_AUTH_LDAP_CONFIG_FILE
+              value: /etc/grafana/ldap.toml
+            - name: GF_AUTH_LDAP_ENABLED
+              value: "true"
+            - name: GF_AUTH_LDAP_SKIP_ORG_ROLE_SYNC
+              value: "false"
+            - name: GF_DASHBOARDS_MIN_REFRESH_INTERVAL
+              value: 60s
+            - name: GF_DATABASE_HOST
+              value: postgres:5432
+            - name: GF_DATABASE_NAME
+              value: grafana
+            - name: GF_DATABASE_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  key: GF_DATABASE_PASSWORD
+                  name: grafana-env
+            - name: GF_DATABASE_SSL_MODE
+              value: disable
+            - name: GF_DATABASE_TYPE
+              value: postgres
+            - name: GF_DATABASE_USER
+              value: grafana
+            - name: GF_EXPLORE_ENABLED
+              value: "false"
+            - name: GF_HELP_ENABLED
+              value: "false"
+            - name: GF_METRICS_ENABLED
+              value: "false"
+            - name: GF_SERVER_DOMAIN
+              value: metrologie-exploit.dsi.inrae.fr
+            - name: GF_SERVER_ROOT_URL
+              value: https://metrologie-exploit.dsi.inrae.fr
+            - name: GF_UNIFIED_ALERTING_ENABLED
+              value: "false"
+            - name: PGPASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  key: PGPASSWORD
+                  name: grafana-env
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  key: POSTGRES_PASSWORD
+                  name: grafana-env
+            - name: TZ
+              value: Europe/Paris
+          image: grafana/grafana-oss:10.3.3
+          name: grafana
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+          resources:
+            limits:
+              memory: "1073741824"
+            requests:
+              memory: "536870912"
+          volumeMounts:
+            - mountPath: /etc/localtime
+              name: grafana-cm0
+              readOnly: true
+              subPath: localtime
+            - mountPath: /var/lib/grafana
+              name: grafana-cm1
+              subPath: grafana
+            - mountPath: /etc/grafana/ldap.toml
+              name: grafana-cm2
+              subPath: ldap.toml
+      restartPolicy: Always
+      volumes:
+        - configMap:
+            items:
+              - key: localtime
+                path: localtime
+            name: grafana-cm0
+          name: grafana-cm0
+        - configMap:
+            items:
+              - key: grafana-data
+                path: grafana
+            name: grafana-cm1
+          name: grafana-cm1
+        - configMap:
+            items:
+              - key: ldap.toml
+                path: ldap.toml
+            name: grafana-cm2
+          name: grafana-cm2
