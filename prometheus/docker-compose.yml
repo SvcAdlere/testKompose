@@ -9,7 +9,7 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /opt/dc-idf/data-prometheus:/data
-      - /opt/dc-idf/dc-idf.yml:/etc/prometheus/prometheus.yml:ro
+      - /opt/dc-idf/dc-xyz.yml:/etc/prometheus/prometheus.yml:ro
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/data/dc-idf"
