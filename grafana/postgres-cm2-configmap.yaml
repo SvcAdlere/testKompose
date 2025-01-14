@@ -4,5 +4,5 @@ data:
 kind: ConfigMap
 metadata:
   labels:
-    io.kompose.service: grafana
-  name: grafana-cm1
+    io.kompose.service: postgres
+  name: postgres-cm2
