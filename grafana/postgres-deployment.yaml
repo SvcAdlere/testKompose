@@ -71,7 +71,7 @@ spec:
               readOnly: true
               subPath: localtime
             - mountPath: /bitnami/postgresql
-              name: postgres-cm2
+              name: postgres-claim2
       restartPolicy: Always
       volumes:
         - configMap:
@@ -86,6 +86,6 @@ spec:
                 path: localtime
             name: postgres-cm1
           name: postgres-cm1
-        - configMap:
-            name: postgres-cm2
-          name: postgres-cm2
+        - name: postgres-claim2
+          persistentVolumeClaim:
+            claimName: postgres-claim2

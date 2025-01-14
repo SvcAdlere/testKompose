@@ -108,7 +108,7 @@ spec:
               readOnly: true
               subPath: localtime
             - mountPath: /var/lib/grafana
-              name: grafana-cm1
+              name: grafana-claim1
             - mountPath: /etc/grafana/ldap.toml
               name: grafana-cm2
               subPath: ldap.toml
@@ -120,9 +120,9 @@ spec:
                 path: localtime
             name: grafana-cm0
           name: grafana-cm0
-        - configMap:
-            name: grafana-cm1
-          name: grafana-cm1
+        - name: grafana-claim1
+          persistentVolumeClaim:
+            claimName: grafana-claim1
         - configMap:
             items:
               - key: ldap.toml
