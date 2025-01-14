@@ -56,7 +56,7 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   key: GF_DATABASE_PASSWORD
-                  name: grafana-env
+                  name: env
             - name: GF_DATABASE_SSL_MODE
               value: disable
             - name: GF_DATABASE_TYPE
@@ -79,14 +79,19 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   key: PGPASSWORD
-                  name: grafana-env
+                  name: env
             - name: POSTGRES_PASSWORD
               valueFrom:
                 configMapKeyRef:
                   key: POSTGRES_PASSWORD
-                  name: grafana-env
+                  name: env
             - name: TZ
               value: Europe/Paris
+            - name: ldap_password
+              valueFrom:
+                configMapKeyRef:
+                  key: ldap_password
+                  name: env
           image: grafana/grafana-oss:10.3.3
           name: grafana
           ports:
@@ -104,7 +109,6 @@ spec:
               subPath: localtime
             - mountPath: /var/lib/grafana
               name: grafana-cm1
-              subPath: grafana
             - mountPath: /etc/grafana/ldap.toml
               name: grafana-cm2
               subPath: ldap.toml
@@ -117,9 +121,6 @@ spec:
             name: grafana-cm0
           name: grafana-cm0
         - configMap:
-            items:
-              - key: grafana-data
-                path: grafana
             name: grafana-cm1
           name: grafana-cm1
         - configMap:

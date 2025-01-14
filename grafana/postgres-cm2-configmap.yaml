@@ -1,0 +1,9 @@
+apiVersion: v1
+data:
+  .user_scripts_initialized: ""
+  toto: ""
+kind: ConfigMap
+metadata:
+  labels:
+    io.kompose.service: postgres
+  name: postgres-cm2

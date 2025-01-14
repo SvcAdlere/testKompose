@@ -1,10 +1,11 @@
 apiVersion: v1
-kind: ConfigMap
-metadata:
-  labels:
-    io.kompose.service: postgres-postgres-env
-  name: postgres-env
 data:
   GF_DATABASE_PASSWORD: jeveuxjustetest
   PGPASSWORD: jeveuxjustetest
   POSTGRES_PASSWORD: jeveuxjustetest
+  ldap_password: tototest
+kind: ConfigMap
+metadata:
+  labels:
+    io.kompose.service: grafana-env
+  name: env

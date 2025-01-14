@@ -28,12 +28,12 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   key: GF_DATABASE_PASSWORD
-                  name: postgres-env
+                  name: env
             - name: PGPASSWORD
               valueFrom:
                 configMapKeyRef:
                   key: PGPASSWORD
-                  name: postgres-env
+                  name: env
             - name: POSTGRESQL_DATABASE
               value: grafana
             - name: POSTGRESQL_LOG_HOSTNAME
@@ -44,9 +44,14 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   key: POSTGRES_PASSWORD
-                  name: postgres-env
+                  name: env
             - name: TZ
               value: Europe/Paris
+            - name: ldap_password
+              valueFrom:
+                configMapKeyRef:
+                  key: ldap_password
+                  name: env
           image: bitnami/postgresql:15
           name: postgres
           ports:
@@ -58,24 +63,29 @@ spec:
             requests:
               memory: "268435456"
           volumeMounts:
-            - mountPath: /etc/localtime
+            - mountPath: /docker-entrypoint-initdb.d/init.sql
               name: postgres-cm0
+              subPath: init.sql
+            - mountPath: /etc/localtime
+              name: postgres-cm1
               readOnly: true
               subPath: localtime
             - mountPath: /bitnami/postgresql
-              name: postgres-cm1
-              subPath: postgresql
+              name: postgres-cm2
       restartPolicy: Always
       volumes:
         - configMap:
             items:
-              - key: localtime
-                path: localtime
+              - key: init.sql
+                path: init.sql
             name: postgres-cm0
           name: postgres-cm0
         - configMap:
             items:
-              - key: postgres-data
-                path: postgresql
+              - key: localtime
+                path: localtime
             name: postgres-cm1
           name: postgres-cm1
+        - configMap:
+            name: postgres-cm2
+          name: postgres-cm2

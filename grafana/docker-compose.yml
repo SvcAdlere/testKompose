@@ -6,11 +6,11 @@ services:
       - 3000:3000
     restart: always
     env_file:
-      - /opt/grafana/.env
+      - .env
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /opt/grafana/grafana-data:/var/lib/grafana
-      - /opt/grafana/ldap.toml:/etc/grafana/ldap.toml
+      - ./ldap.toml:/etc/grafana/ldap.toml
     environment:
       - TZ=Europe/Paris
       - GF_AUTH_ANONYMOUS_ENABLED=true
@@ -57,8 +57,9 @@ services:
       - POSTGRESQL_USERNAME=grafana
       - POSTGRESQL_DATABASE=grafana
     env_file:
-      - /opt/grafana/.env
+      - .env
     volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
       - /etc/localtime:/etc/localtime:ro
       - /opt/grafana/postgres-data:/bitnami/postgresql
     deploy:
